@@ -74,8 +74,9 @@ void QStrokes::connectTwoStrokes()
 	int beginIndex=min(d(2), d(3)), endIndex=max(d(2), d(3));
 	for(int i=beginIndex; i<=endIndex; i=next(i))
 	{
-		QPoint point=graph.getPoint(i);
-		graph.setPoint(i, transform.map(point));
+		QVector<QPoint> points=graph.getPoints(i);
+		for(QPoint& p : points)p=transform.map(p);
+		graph.setPoints(i, points);
 	}
 	#undef min(x, y)
 	#undef max(x, y)

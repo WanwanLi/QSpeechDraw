@@ -112,6 +112,21 @@ void QGraph::drawVertices(QPainter& painter)
 		painter.drawText(p.x()-r, p.y()-r, vertices[i].text);
 	}
 }
+QVector<QPoint> QGraph::getPoints(int index)
+{
+	QVector<QPoint> points;
+	if(path[index]==MOVE)points<<QPoint(path[index+1], path[index+2]);
+	else if(path[index]==LINE)points<<QPoint(path[index+1], path[index+2]);
+	else if(path[index]==CUBIC)for(int i=0; i<3; i++)points<<QPoint(path[index+i*2+1], path[index+i*2+2]);
+	return points;
+}
+void QGraph::setPoints(int index, QVector<QPoint> points)
+{
+	if(points.isEmpty())return; QPoint point=points[0];
+	if(path[index]==MOVE){path[index+1]=point.x(); path[index+2]=point.y();}
+	else if(path[index]==LINE){path[index+1]=point.x(); path[index+2]=point.y();}
+	else if(path[index]==CUBIC)for(int i=0; i<3; i++){path[index+i*2+1]=points[i].x(); path[index+i*2+2]=points[i].y();}
+}
 QPoint QGraph::getPoint(int index)
 {
 	if(path[index]==MOVE)return QPoint(path[index+1], path[index+2]);

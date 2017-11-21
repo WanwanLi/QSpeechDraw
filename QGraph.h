@@ -17,7 +17,9 @@ class QGraph
 	QPoint getPoint(QString vertexText);
 	void setPoint(int index, QPoint point);
 	void drawVertices(QPainter& painter);
+	QVector<QPoint> getPoints(int index);
 	void operator--(int), updateEdge(), clear();
+	void setPoints(int index, QVector<QPoint> points);
 	QPoint getPoint(QString vertexText, int& vertexIndex);
 	void setVertexText(int vertexIndex, QString vertexText);
 
