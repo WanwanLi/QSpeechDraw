@@ -1,10 +1,7 @@
 #include "QCurve.h"
-#define dot(x, y) vec3::dotProduct(x, y)
+#define dot vec2::dotProduct
+#define cross vec3::crossProduct
 
-QPoint QCurve::last()
-{
-	return toQPoint(curvePoints.last());
-}
 vec2& QCurve::operator[](int index)
 {
 	return this->curvePoints[index];
@@ -18,6 +15,10 @@ void QCurve::operator--(int)
 {
 	this->curvePoints.removeLast();
 }
+QPoint QCurve::last()
+{
+	return toQPoint(curvePoints.last());
+}
 bool QCurve::isLinear()
 {
 	vec2 begin=curvePoints.first();
@@ -27,15 +28,69 @@ bool QCurve::isLinear()
 	{
 		error+=point.distanceToLine(begin, direction);
 	}
-	return error/length()<minError?true:false;
+	return error/length()<minError;
+}
+bool QCurve::isCircular()
+{
+	#define p curvePoints
+	int n=size(); qreal xx, yy, xy, xz, yz; 
+	vec2 s=vec2(0, 0);
+	for(int i=0; i<n; s+=p[i++]);
+	s/=n; xx=yy=xy=xz=yz=0;
+	for(int i=0; i<n; i++)
+	{
+		qreal x=p[i].x()-s.x();
+		qreal y=p[i].y()-s.y();
+		qreal z=x*x+y*y;
+		xx+=x*x; yy+=y*y;
+		xy+=x*y; xz+=x*z; yz+=y*z;
+	}
+	xx/=n; yy/=n; xy/=n; xz/=n; yz/=n;
+	qreal G11=sqrt(xx), G12=xy/G11;
+	qreal G22=sqrt(yy-G12*G12);
+	qreal D1=xz/G11, D2=(yz-D1*G12)/G22;
+	qreal b=D2/G22/2, a=(D1-G12*b)/G11/2;
+	vec2 center=vec2(a+s.x(), b+s.y());
+	qreal radius=sqrt(a*a+b*b+xx+yy);
+	qreal error=distanceToCircle(center, radius);
+	if(error<minError)
+	{
+		if(this->ctrlTangents[0].length()==0)
+		this->ctrlTangents[0]=tangent(center, ctrlPoints[0]);
+		this->ctrlTangents[1]=tangent(center, ctrlPoints[3]);
+		if(this->isCubic())return true;
+	}
+	this->ctrlTangents[0]=vec2(0, 0);
+	this->ctrlTangents[1]=vec2(0, 0);
+	return false;
+}
+vec2 QCurve::tangent(const vec2& center, const vec2& point)
+{
+	vec3 normal=vec3(0, 0, 1);
+	vec3 direction=vec3(point-center);
+	return cross(direction.normalized(), normal).toVector2D();
+}
+qreal QCurve::distanceToCircle(const vec2& center, qreal radius)
+{
+	#define p curvePoints
+	qreal distance=0; int n=size();
+	for(int i=0; i<n; i++)
+	{
+		qreal dx=p[i].x()-center.x();
+		qreal dy=p[i].y()-center.y();
+		qreal dr=sqrt(dx*dx+dy*dy);
+		distance+=dr-radius;
+	}
+	return distance/length();
 }
 bool QCurve::isCubic()
 {
 	vec2 leftTangent=tangent(0, 1); 
-	qreal tangentError=dot(leftTangent, ctrlTangent);
-	if(ctrlTangent.length()==0)tangentError=-1.0;
-	if(isCloseTo(tangentError, 1.0, dirError))leftTangent=ctrlTangent;
-	vec2 rightTangent=tangent(size()-1, size()-2);
+	qreal tangentError=dot(leftTangent, ctrlTangents[0]);
+	if(ctrlTangents[0].length()==0)tangentError=-1.0;
+	if(isCloseTo(tangentError, 1.0, dirError))leftTangent=ctrlTangents[0];
+	vec2 rightTangent=ctrlTangents[1];
+	if(rightTangent.length()==0)rightTangent=tangent(size()-1, size()-2);
 	qreal* params=getChordLengthParameters();
 	getCtrlPoints(params, leftTangent, rightTangent);
 	this->fittingError=getFittingError(params);

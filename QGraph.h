@@ -5,8 +5,7 @@ class QVertex
 {
 	public:
 	QVertex(int i):text(num(i)), index(i){}
-	QVertex(){} QString text=""; int index=0; 
-	QVertex(QString s, int i):text(s), index(i){}
+	QVertex(){} QString text=""; int index=0;
 };
 class QGraph
 {

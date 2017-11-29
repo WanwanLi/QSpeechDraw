@@ -19,7 +19,8 @@ class QStrokes
 	QGraph graph=QGraph(path);
 	QVector<QPoint> connectPoints;
 	QStrokes& operator<<(int path);
-	QString NEW_VERTEX="NEW_VERTEX";
+	QString SET_VERTEX="SET_VERTEX";
+	QString ADD_VERTEX="ADD_VERTEX";
 	QString CONNECT_TWO_STROKES="@";
 	QString INITIAL_STATE="INITIAL_STATE";
 	QStrokes& operator>>(QString vertexText);
@@ -39,5 +40,4 @@ class QStrokes
 	int next(int index), prev(int index);
 	int begin=0, end, index, vertexIndex;
 	void startPath(QPoint point, vec2 direction);
-
 };

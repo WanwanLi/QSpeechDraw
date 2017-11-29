@@ -25,6 +25,7 @@ void QStrokes::operator+=(QPoint point)
 	this->curve+=point;
 	if(curve.length()<curve.minLength)this->setPath(LINE);
 	else if(curve.isLinear())this->setPath(LINE);
+	else if(curve.isCircular())this->setPath(CUBIC);
 	else if(curve.isCubic())this->setPath(CUBIC);
 	else {this->curve--; this->startPath(point);}
 }
@@ -89,7 +90,11 @@ QStrokes& QStrokes::operator>>(QString vertexText)
 	{
 		this->state=CONNECT_TWO_STROKES; return *this;
 	}
-	if(vertexText==NEW_VERTEX)
+	if(vertexText==ADD_VERTEX)
+	{
+		this->vertexIndex=next(begin); return *this;
+	}
+	if(vertexText==SET_VERTEX)
 	{
 		this->vertexIndex=begin; 
 		this->startPath(curve.last()); return *this;
@@ -186,7 +191,6 @@ void QStrokes::startPath(QPoint point, vec2 direction)
 	this->index=size();
 	this->curve.clear();
 	this->curve+=point;
-	this->curve.ctrlTangent=direction;
 	this->path<<LINE<<point.x()<<point.y();
 	if(direction.length()==0)this->begin=next(begin);
 	this->updateGraph();

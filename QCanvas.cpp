@@ -12,6 +12,7 @@ QCanvas::QCanvas(QWidget* widget) : QWidget(widget)
 	this->bgColor=qRgb(255, 255, 255);
 	this->basicTimer.start(255, this);
 	this->isImageModified=false;
+	this->isMousePressed=false;
 	this->clearImage();
 	this->setFocus();
 }
@@ -43,7 +44,8 @@ void QCanvas::keyPressEvent(QKeyEvent* event)
 {
 	if(!keyTimer)
 	{
-		if(isMousePressed)this->sketch.strokes>>sketch.strokes.NEW_VERTEX;
+		if(isMousePressed)this->sketch.strokes>>sketch.strokes.SET_VERTEX;
+		else this->sketch.strokes>>sketch.strokes.ADD_VERTEX;
 		this->keyTimer=keyInterval;
 	}
 	this->vertexText+=event->text();
