@@ -3,6 +3,11 @@
 #include <Eigen/Dense>
 using namespace Eigen;
 
+QString QStrokes::CONNECT_POINTS="@";
+QString QStrokes::SET_VERTEX="SET_VERTEX";
+QString QStrokes::ADD_VERTEX="ADD_VERTEX";
+QString QStrokes::INITIAL_STATE="INITIAL_STATE";
+
 QStrokes::QStrokes()
 {
 	this->state=INITIAL_STATE;
@@ -42,7 +47,11 @@ void QStrokes::startPath(QPoint point)
 }
 void QStrokes::drawConnectPoints(QPainter& painter)
 {
-	if(state!=CONNECT_TWO_STROKES)return;
+	if(is(this->CONNECT_POINTS))
+	{
+		painter.drawText(30, 30, "Connect End Points... "); return;
+	}
+	if(connectPoints.size())
 	painter.drawText(30, 30, "Connect Two Strokes... ");
 	int r=20; for(QPoint p : connectPoints)
 	painter.drawEllipse(p.x()-r/2, p.y()-r/2, r, r);
@@ -65,6 +74,11 @@ QMatrix getTransformation(QPoint srcPoint0, QPoint srcPoint1, QPoint destPoint0,
 	#undef p0
 	#undef p1
 }
+void QStrokes::mergeCloseEndPointsIndices(int& beginIndex, int& endIndex)
+{
+	for(int b=beginIndex, i=prev(b); i>0&&graph.isClose(b, i); i=prev(i))beginIndex=i;
+	for(int e=endIndex, i=next(e); i<path.size()&&graph.isClose(e, i); i=next(i))endIndex=i;
+}
 void QStrokes::connectTwoStrokes()
 {
 	#define min(x, y) (x<y?x:y)
@@ -73,6 +87,7 @@ void QStrokes::connectTwoStrokes()
 	#define d(i) connectIndices[i]
 	QMatrix transform=getTransformation(p(0), p(1), p(2), p(3));
 	int beginIndex=min(d(2), d(3)), endIndex=max(d(2), d(3));
+	mergeCloseEndPointsIndices(beginIndex, endIndex);
 	for(int i=beginIndex; i<=endIndex; i=next(i))
 	{
 		QVector<QPoint> points=graph.getPoints(i);
@@ -86,9 +101,9 @@ void QStrokes::connectTwoStrokes()
 }
 QStrokes& QStrokes::operator>>(QString vertexText)
 {
-	if(vertexText==CONNECT_TWO_STROKES)
+	if(vertexText==CONNECT_POINTS)
 	{
-		this->state=CONNECT_TWO_STROKES; return *this;
+		this->state=CONNECT_POINTS; return *this;
 	}
 	if(vertexText==ADD_VERTEX)
 	{
@@ -100,28 +115,30 @@ QStrokes& QStrokes::operator>>(QString vertexText)
 		this->startPath(curve.last()); return *this;
 	}
 	int index=-1; QPoint point=graph.getPoint(vertexText, index);
-	if(state==CONNECT_TWO_STROKES)
+	if(is(CONNECT_POINTS)&&index!=-1)
 	{
+		(*this)+=point; this->state=INITIAL_STATE;
+	}
+	else if(vertexIndex!=-1)
+	{
+		this->graph.setVertexText(vertexIndex, vertexText);
+		#define get(x) graph.getPoint(x)
 		if(index!=-1)
 		{
-			if(!connectPoints.contains(point))
-			this->connectPoints<<point;
-			this->connectIndices<<index;
+			int size=connectPoints.size();
+			this->connectPoints.insert(size/2, point);
+			this->connectIndices.insert(size/2, index);
+			this->connectPoints<<get(vertexIndex);
+			this->connectIndices<<vertexIndex;
 			if(connectPoints.size()==4)
 			{
 				this->connectTwoStrokes();
 				this->connectPoints.clear();
 				this->connectIndices.clear();
-				this->state=INITIAL_STATE;
 			}
 		}
-		return *this;
-	}
-	if(index!=-1)(*this)+=point;
-	else if(vertexIndex!=-1)
-	{
-		this->graph.setVertexText(vertexIndex, vertexText);
 		this->vertexIndex=-1; 
+		#undef get(x)
 	}
 	return *this;
 }
@@ -221,4 +238,8 @@ void QStrokes::removeLast()
 void QStrokes::removeLast(int length)
 {
 	for(int i=0; i<length; i++)this->path.removeLast();
+}
+bool QStrokes::is(QString state)
+{
+	return this->state==state;
 }

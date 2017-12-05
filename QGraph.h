@@ -10,6 +10,7 @@ class QVertex
 class QGraph
 {
 	public:
+	bool isClose(int i, int j);
 	QGraph(veci& p):path(p){}
 	QPoint getPoint(int index);
 	void operator+=(QVertex* edge);
@@ -26,7 +27,6 @@ class QGraph
 	veci& path;
 	QVector<int*> edges;
 	void updateVertices();
-	bool isClose(int i, int j);
 	qreal minDistance=30.0;
 	enum{MOVE, LINE, CUBIC};
 	QVector<QVertex> vertices;
