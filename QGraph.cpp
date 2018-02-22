@@ -1,9 +1,11 @@
 #include "QGraph.h"
+#include <QDebug>
 #define toQPoint(p) QPoint(p.x(), p.y())
 
 void QGraph::operator+=(QVertex* edge)
 {
-	int begin=add(edge[0]), end=append(edge[1]);
+	int begin=add(edge[0]);
+	int end=append(edge[1]);
 	this->edges<<new int[2]{begin, end};
 }
 void QGraph::operator--(int)
@@ -12,9 +14,34 @@ void QGraph::operator--(int)
 	this->edges.removeLast();
 	this->updateVertices();
 }
-void QGraph::setVertexText(int vertexIndex, QString vertexText)
+bool QGraph::setVertexText(int vertexIndex, QString vertexText)
 {
-	for(QVertex& vertex : vertices)if(vertex.index==vertexIndex)vertex.text=vertexText;
+	for(QVertex& vertex : vertices)
+	{
+		if(vertex.index==vertexIndex)
+		{
+			vertex.text=vertexText; 
+			return true;
+		}
+	}
+	return false;
+}
+int QGraph::getVertexIndex(QPoint point)
+{
+	vec2 x=vec2(point);
+	qreal minDist; int index=-1;
+	for(int i=0; i<vertices.size(); i++)
+	{
+		vec2 y=vec2(getVertexPoint(i));
+		qreal dist=x.distanceToPoint(y);
+		if(index<0||dist<minDist)
+		{minDist=dist; index=i;}
+	}
+	return index;
+}
+QPoint QGraph::getVertexPoint(int vertexIndex)
+{
+	return getPoint(vertices[vertexIndex].index);
 }
 QPoint QGraph::getPoint(QString vertexText)
 {
@@ -74,7 +101,8 @@ int QGraph::add(QVertex vertex)
 	if(index!=-1)return index;
 	for(int i=0; i<vertices.size(); i++)
 	{
-		if(isClose(vertices[i].index, vertex.index))return i;
+		if(isClose(vertices[i].index, vertex.index))
+		return append(vertex);
 	}
 	return append(vertex);
 }
@@ -107,6 +135,7 @@ void QGraph::drawVertices(QPainter& painter)
 {
 	for(int i=0, r=10; i<vertices.size(); i++)
 	{
+		if(vertices[i].text=="")continue;
 		QPoint p=getPoint(vertices[i].index);
 		painter.drawEllipse(p.x()-r/2, p.y()-r/2, r, r);
 		painter.drawText(p.x()-r, p.y()-r, vertices[i].text);

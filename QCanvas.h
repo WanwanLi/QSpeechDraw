@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPaintEvent>
 #include <QBasicTimer>
+#include "QSpeech.h"
 #include "QSketch.h"
 
 class QCanvas : public QWidget
@@ -19,6 +20,7 @@ class QCanvas : public QWidget
 	void clear();
 	bool isModified();
 	void resizeImage();
+	void listenEvent(QListenEvent* event);
 
 	private:
 	QPoint point;
@@ -28,6 +30,9 @@ class QCanvas : public QWidget
 	QWidget* widget;
 	void clearImage();
 	QPen pen, marker;
+	QThread* listener;
+	QSpeech* speech;
+	void startListener();
 	bool isMousePressed;
 	QString vertexText="";
 	bool isImageModified;

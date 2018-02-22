@@ -1,4 +1,5 @@
 #include <QPainter>
+#include <QDebug>
 #include "QCanvas.h"
 
 QCanvas::QCanvas(QWidget* widget) : QWidget(widget)
@@ -6,8 +7,11 @@ QCanvas::QCanvas(QWidget* widget) : QWidget(widget)
 	this->widget=widget;
 	this->resize(widget->size());
 	this->sketch.resize(size());
+	this->listener=new QThread();
+	this->speech=new QSpeech(listener);
 	this->pen=QPen(Qt::green, 8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
 	this->marker=QPen(Qt::red, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+	this->connect(speech, &QSpeech::listenEvent, this, &QCanvas::listenEvent);
 	this->image=new QImage(size(), QImage::Format_RGB32);
 	this->bgColor=qRgb(255, 255, 255);
 	this->basicTimer.start(255, this);
@@ -40,8 +44,19 @@ bool QCanvas::loadImage(QString fileName)
 	}
 	else return false;
 }
+void QCanvas::startListener()
+{
+	this->vertexText="listenning...";
+	if(listener->isRunning())listener->quit();
+	this->listener->start();
+}
 void QCanvas::keyPressEvent(QKeyEvent* event)
 {
+	if(event->text()==QStrokes::LISTEN_VERTEX_NAME)
+	{
+		this->sketch.strokes>>QStrokes::ADD_VERTEX;
+		this->startListener(); return;
+	}
 	if(!keyTimer)
 	{
 		if(isMousePressed)this->sketch.strokes>>QStrokes::SET_VERTEX;
@@ -49,6 +64,23 @@ void QCanvas::keyPressEvent(QKeyEvent* event)
 		this->keyTimer=keyInterval;
 	}
 	this->vertexText+=event->text();
+}
+void QCanvas::listenEvent(QListenEvent* event)
+{
+	QStringList text=event->text;
+	qDebug()<<text;
+	if(text.size()>=2)
+	{
+		if(text[0]=="number")
+		{
+			sketch.strokes>>text[1];
+			this->vertexText=text[1];
+			this->speech->speak("Number "+text[1]);
+		}
+		else this->speech->speak("pardon");
+	}
+	else this->speech->speak("pardon");
+	this->listener->quit();
 }
 bool QCanvas::saveImage(QString fileName, const char* fileFormat)
 {
@@ -112,6 +144,7 @@ void QCanvas::timerEvent(QTimerEvent* event)
 	painter.setPen(pen);
 	painter.drawPath(sketch);
 	painter.setPen(marker);
+	sketch.strokes.drawStatus(painter);
 	sketch.strokes.drawConnectPoints(painter);
 	sketch.strokes.graph.drawVertices(painter);
 	if(vertexText!="")painter.drawText(50, 50, "Vertex: "+vertexText);
@@ -124,6 +157,10 @@ void QCanvas::mousePressEvent(QMouseEvent* event)
 		this->point=event->pos();
 		this->sketch.strokes=event->pos();
 		this->isMousePressed=true;
+	}
+	else if(event->button()==Qt::RightButton) 
+	{
+		this->sketch.strokes*=event->pos();
 	}
 }
 void QCanvas::mouseMoveEvent(QMouseEvent* event)

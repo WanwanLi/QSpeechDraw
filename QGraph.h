@@ -4,7 +4,8 @@
 class QVertex
 {
 	public:
-	QVertex(int i):text(num(i)), index(i){}
+	//QVertex(int i):text(num(i)), index(i){}
+	QVertex(int i):index(i){}
 	QVertex(){} QString text=""; int index=0;
 };
 class QGraph
@@ -14,14 +15,16 @@ class QGraph
 	QGraph(veci& p):path(p){}
 	QPoint getPoint(int index);
 	void operator+=(QVertex* edge);
+	int getVertexIndex(QPoint point);
 	QPoint getPoint(QString vertexText);
 	void setPoint(int index, QPoint point);
 	void drawVertices(QPainter& painter);
 	QVector<QPoint> getPoints(int index);
+	QPoint getVertexPoint(int vertexIndex);
 	void operator--(int), updateEdge(), clear();
 	void setPoints(int index, QVector<QPoint> points);
 	QPoint getPoint(QString vertexText, int& vertexIndex);
-	void setVertexText(int vertexIndex, QString vertexText);
+	bool setVertexText(int vertexIndex, QString vertexText);
 
 	private:
 	veci& path;

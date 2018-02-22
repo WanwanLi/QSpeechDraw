@@ -1,0 +1,4 @@
+You can speak "Letter" and then "Name for a node"
+For example :
+you can say:
+Letter A

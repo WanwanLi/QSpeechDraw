@@ -4,6 +4,7 @@
 using namespace Eigen;
 
 QString QStrokes::CONNECT_POINTS="@";
+QString QStrokes::LISTEN_VERTEX_NAME="#";
 QString QStrokes::SET_VERTEX="SET_VERTEX";
 QString QStrokes::ADD_VERTEX="ADD_VERTEX";
 QString QStrokes::INITIAL_STATE="INITIAL_STATE";
@@ -20,10 +21,39 @@ int& QStrokes::operator[](int index)
 {
 	return this->path[index];
 }
+bool QStrokes::setVertexText(QString vertexText)
+{
+	bool hasVertex=graph.setVertexText(vertexIndex, vertexText);
+	int index=-1; QPoint point=graph.getPoint(vertexText, index);
+	if(index==vertexIndex)index=-1;
+	#define get(x) graph.getPoint(x)
+	if(hasVertex&&index!=-1)
+	{
+		int size=connectPoints.size();
+		this->connectPoints.insert(size/2, point);
+		this->connectIndices.insert(size/2, index);
+		this->connectPoints<<get(vertexIndex);
+		this->connectIndices<<vertexIndex;
+		if(connectPoints.size()==4)
+		{
+			this->connectTwoStrokes();
+			this->connectPoints.clear();
+			this->connectIndices.clear();
+		}
+	}
+	#undef get(x)
+	return hasVertex;
+}
 void QStrokes::operator=(QPoint point)
 {
 	this->path<<MOVE<<point.x()<<point.y();
 	this->startPath(point, vec2(0, 0));
+	if(vertexText!="")
+	{
+		this->setVertexText(vertexText);
+		this->vertexText="";
+		this->vertexIndex=-1;
+	}
 }
 void QStrokes::operator+=(QPoint point)
 {
@@ -33,6 +63,10 @@ void QStrokes::operator+=(QPoint point)
 	else if(curve.isCircular())this->setPath(CUBIC);
 	else if(curve.isCubic())this->setPath(CUBIC);
 	else {this->curve--; this->startPath(point);}
+}
+void QStrokes::operator*=(QPoint point)
+{
+	this->vertex=graph.getVertexIndex(point);
 }
 QStrokes& QStrokes::operator<<(int path)
 {
@@ -45,16 +79,20 @@ void QStrokes::startPath(QPoint point)
 	else if(curve.isCubic())this->setPath(CUBIC);
 	this->startPath(point, curve.direction());
 }
+void QStrokes::drawStatus(QPainter& painter)
+{
+	if(vertex>=0)
+	{
+		QPoint p=graph.getVertexPoint(vertex); int r=20;
+		painter.drawRect(p.x()-r/2, p.y()-r/2, r, r);
+	}
+	if(vertexText!="")painter.drawText(30, 30, "Draw Vertex: "+vertexText);
+}
 void QStrokes::drawConnectPoints(QPainter& painter)
 {
-	if(is(this->CONNECT_POINTS))
-	{
-		painter.drawText(30, 30, "Connect End Points... "); return;
-	}
-	if(connectPoints.size())
-	painter.drawText(30, 30, "Connect Two Strokes... ");
-	int r=20; for(QPoint p : connectPoints)
-	painter.drawEllipse(p.x()-r/2, p.y()-r/2, r, r);
+	if(is(this->CONNECT_POINTS)){painter.drawText(30, 30, "Connect Points"); return;}
+	if(connectPoints.size())painter.drawText(30, 30, "Connect Two Strokes...");
+	int r=20; for(QPoint p : connectPoints)painter.drawEllipse(p.x()-r/2, p.y()-r/2, r, r);
 }
 QMatrix getTransformation(QPoint srcPoint0, QPoint srcPoint1, QPoint destPoint0, QPoint destPoint1)
 {
@@ -103,7 +141,9 @@ QStrokes& QStrokes::operator>>(QString vertexText)
 {
 	if(vertexText==CONNECT_POINTS)
 	{
-		this->state=CONNECT_POINTS; return *this;
+		this->state=CONNECT_POINTS;
+		this->vertexText="";
+		return *this;
 	}
 	if(vertexText==ADD_VERTEX)
 	{
@@ -121,24 +161,9 @@ QStrokes& QStrokes::operator>>(QString vertexText)
 	}
 	else if(vertexIndex!=-1)
 	{
-		this->graph.setVertexText(vertexIndex, vertexText);
-		#define get(x) graph.getPoint(x)
-		if(index!=-1)
-		{
-			int size=connectPoints.size();
-			this->connectPoints.insert(size/2, point);
-			this->connectIndices.insert(size/2, index);
-			this->connectPoints<<get(vertexIndex);
-			this->connectIndices<<vertexIndex;
-			if(connectPoints.size()==4)
-			{
-				this->connectTwoStrokes();
-				this->connectPoints.clear();
-				this->connectIndices.clear();
-			}
-		}
-		this->vertexIndex=-1; 
-		#undef get(x)
+		if(!setVertexText(vertexText))
+		this->vertexText=vertexText; 
+		else this->vertexIndex=-1;
 	}
 	return *this;
 }
@@ -194,6 +219,8 @@ void QStrokes::clear()
 	this->path.clear();
 	this->graph.clear();
 	this->state=INITIAL_STATE;
+	this->connectPoints.clear();
+	this->connectIndices.clear();
 }
 void QStrokes::update()
 {
