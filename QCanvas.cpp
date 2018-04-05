@@ -59,7 +59,8 @@ void QCanvas::keyPressEvent(QKeyEvent* event)
 	}
 	if(!keyTimer)
 	{
-		if(isMousePressed)this->sketch.strokes>>QStrokes::SET_VERTEX;
+		if(sketch.strokes.changeVertexText)this->sketch.strokes>>QStrokes::CHANGE_VERTEX;
+		else if(isMousePressed)this->sketch.strokes>>QStrokes::SET_VERTEX;
 		else this->sketch.strokes>>QStrokes::ADD_VERTEX;
 		this->keyTimer=keyInterval;
 	}

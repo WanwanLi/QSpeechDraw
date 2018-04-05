@@ -14,17 +14,27 @@ void QGraph::operator--(int)
 	this->edges.removeLast();
 	this->updateVertices();
 }
-bool QGraph::setVertexText(int vertexIndex, QString vertexText)
+bool QGraph::setVertexText(int vertexIndex, QString vertexText, bool isVertex)
 {
+	if(isVertex)
+	{
+		if(vertexIndex>=0)
+		{
+			vertices[vertexIndex].text=vertexText; 
+			return true;
+		}
+		else return false;
+	}
+	bool hasVertex=false;
 	for(QVertex& vertex : vertices)
 	{
 		if(vertex.index==vertexIndex)
 		{
 			vertex.text=vertexText; 
-			return true;
+			hasVertex=true;
 		}
 	}
-	return false;
+	return hasVertex;
 }
 int QGraph::getVertexIndex(QPoint point)
 {
@@ -34,6 +44,7 @@ int QGraph::getVertexIndex(QPoint point)
 	{
 		vec2 y=vec2(getVertexPoint(i));
 		qreal dist=x.distanceToPoint(y);
+		if(vertices[i].text!="")
 		if(index<0||dist<minDist)
 		{minDist=dist; index=i;}
 	}
@@ -42,6 +53,10 @@ int QGraph::getVertexIndex(QPoint point)
 QPoint QGraph::getVertexPoint(int vertexIndex)
 {
 	return getPoint(vertices[vertexIndex].index);
+}
+QString QGraph::getVertexText(int vertexIndex)
+{
+	return vertices[vertexIndex].text;
 }
 QPoint QGraph::getPoint(QString vertexText)
 {

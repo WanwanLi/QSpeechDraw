@@ -16,23 +16,21 @@ def write(fileName, text):
 	file.write(text);
 	file.close();
 
-def listen(timeout):
+def listen(timeout, timeLimit):
 	with SpeechRecognition.Microphone() as microphone:
 		recognizer.adjust_for_ambient_noise(microphone, duration=1);
-		speaker.Speak("Please speak");
+		speaker.Speak("Speak");
 		try:
-			audio=recognizer.listen(microphone, timeout);
-			text=recognizer.recognize_google(audio);
+			audio=recognizer.listen(microphone, timeout, timeLimit);
+			text=recognizer.recognize_google(audio); 
 			if(text.find("help")!=-1): speak("help.txt");
 			else: 
 				write("../audio.txt", text); 
 				return;
 		except SpeechRecognition.UnknownValueError:
-			speaker.Speak("Could not understand");
+			write("../audio.txt", "null");
 		except SpeechRecognition.WaitTimeoutError:
-			speaker.Speak("Could not hear anything");
+			write("../audio.txt", "null");
 		except SpeechRecognition.RequestError:
-			speaker.Speak("Could not request results");
-	write("../audio.txt", "null");
-
-listen(2);
+			write("../audio.txt", "null");
+listen(2, 3);

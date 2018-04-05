@@ -1,4 +1,4 @@
-You can speak "Letter" and then "Name for a node"
+You can speak "Number" and then "The number for a node"
 For example :
 you can say:
-Letter A
+Number 1

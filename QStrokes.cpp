@@ -8,6 +8,7 @@ QString QStrokes::LISTEN_VERTEX_NAME="#";
 QString QStrokes::SET_VERTEX="SET_VERTEX";
 QString QStrokes::ADD_VERTEX="ADD_VERTEX";
 QString QStrokes::INITIAL_STATE="INITIAL_STATE";
+QString QStrokes::CHANGE_VERTEX="CHANGE_VERTEX";
 
 QStrokes::QStrokes()
 {
@@ -23,7 +24,8 @@ int& QStrokes::operator[](int index)
 }
 bool QStrokes::setVertexText(QString vertexText)
 {
-	bool hasVertex=graph.setVertexText(vertexIndex, vertexText);
+	bool hasVertex=graph.setVertexText(vertexIndex, vertexText, changeVertexText);
+	if(changeVertexText)return hasVertex;
 	int index=-1; QPoint point=graph.getPoint(vertexText, index);
 	if(index==vertexIndex)index=-1;
 	#define get(x) graph.getPoint(x)
@@ -67,6 +69,7 @@ void QStrokes::operator+=(QPoint point)
 void QStrokes::operator*=(QPoint point)
 {
 	this->vertex=graph.getVertexIndex(point);
+	this->changeVertexText=vertex>=0;
 }
 QStrokes& QStrokes::operator<<(int path)
 {
@@ -81,12 +84,14 @@ void QStrokes::startPath(QPoint point)
 }
 void QStrokes::drawStatus(QPainter& painter)
 {
-	if(vertex>=0)
+	if(changeVertexText)
 	{
 		QPoint p=graph.getVertexPoint(vertex); int r=20;
 		painter.drawRect(p.x()-r/2, p.y()-r/2, r, r);
+		QString s=graph.getVertexText(vertex); 
+		painter.drawText(30, 30, "Rename Vertex: "+s);
 	}
-	if(vertexText!="")painter.drawText(30, 30, "Draw Vertex: "+vertexText);
+	else if(vertexText!="")painter.drawText(30, 30, "Draw Vertex: "+vertexText);
 }
 void QStrokes::drawConnectPoints(QPainter& painter)
 {
@@ -147,12 +152,19 @@ QStrokes& QStrokes::operator>>(QString vertexText)
 	}
 	if(vertexText==ADD_VERTEX)
 	{
-		this->vertexIndex=next(begin); return *this;
+		this->vertexIndex=next(begin); 
+		return *this;
+	}
+	if(vertexText==CHANGE_VERTEX)
+	{
+		this->vertexIndex=vertex; 
+		return *this;
 	}
 	if(vertexText==SET_VERTEX)
 	{
 		this->vertexIndex=begin; 
-		this->startPath(curve.last()); return *this;
+		this->startPath(curve.last()); 
+		return *this;
 	}
 	int index=-1; QPoint point=graph.getPoint(vertexText, index);
 	if(is(CONNECT_POINTS)&&index!=-1)
@@ -163,7 +175,10 @@ QStrokes& QStrokes::operator>>(QString vertexText)
 	{
 		if(!setVertexText(vertexText))
 		this->vertexText=vertexText; 
-		else this->vertexIndex=-1;
+		else 
+		{	this->vertexIndex=-1;
+			this->changeVertexText=false; 
+		}
 	}
 	return *this;
 }

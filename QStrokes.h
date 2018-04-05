@@ -18,10 +18,12 @@ class QStrokes
 	static QString SET_VERTEX;
 	static QString ADD_VERTEX;
 	static QString INITIAL_STATE;
+	bool changeVertexText=false;
 	QGraph graph=QGraph(path);
 	void operator=(QPoint point);
 	void operator+=(QPoint point);
 	void operator*=(QPoint point);
+	static QString CHANGE_VERTEX;
 	QVector<QPoint> connectPoints;
 	QStrokes& operator<<(int path);
 	static QString CONNECT_POINTS;

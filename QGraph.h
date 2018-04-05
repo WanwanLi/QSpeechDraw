@@ -21,10 +21,11 @@ class QGraph
 	void drawVertices(QPainter& painter);
 	QVector<QPoint> getPoints(int index);
 	QPoint getVertexPoint(int vertexIndex);
+	QString getVertexText(int vertexIndex);
 	void operator--(int), updateEdge(), clear();
 	void setPoints(int index, QVector<QPoint> points);
 	QPoint getPoint(QString vertexText, int& vertexIndex);
-	bool setVertexText(int vertexIndex, QString vertexText);
+	bool setVertexText(int vertexIndex, QString vertexText, bool isVertex);
 
 	private:
 	veci& path;
